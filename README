@@ -1,0 +1,3 @@
+mkvirtualenv --no-site-packages
+pip install -r requirements.txt
+ipython notebook --pylab=inline
