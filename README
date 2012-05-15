@@ -1,3 +1,5 @@
-mkvirtualenv --no-site-packages r_python_meetup
-pip install -r requirements.txt
-ipython notebook --pylab=inline
+Install Python 2.7, including the dev includes etc., and virtualenvwrapper, then:
+
+./bootstrap.sh
+
+./launch-private-notebooks.sh # or ./launch-public-notebook.sh
