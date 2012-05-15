@@ -1,0 +1,7 @@
+Pygments==1.5
+numpy==1.6.1
+python-dateutil==1.5
+pytz==2012c
+pyzmq==2.1.11
+tornado==2.2
+wsgiref==0.1.2
