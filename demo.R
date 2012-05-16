@@ -1,9 +1,6 @@
 #!/usr/bin/Rscript --vanilla --slave
 
-required.packages <- c("gdata", "zoo", "xts", "Cairo", "ggplot2", "lattice"
-                       #, "FastRWeb"
-                       #, "timeDate"
-                       )
+required.packages <- c("gdata", "zoo", "Cairo", "lattice")
 for (pkg in required.packages) {
   if (! pkg %in% rownames(installed.packages())) {
     install.packages(pkg, repos=c("http://cran.us.r-project.org"))
@@ -18,21 +15,22 @@ save.plot <- function (p, filename="chart.png", width=8, height=6) {
 }
 
 heading <- function (s) {
+  cat("\n\n** ")
   cat(s)
+  cat("\n\n")
 }
 
 main <- function () {
   weather.df <- read.csv('./weather2010n.csv', as.is=TRUE)
-  cycling.df <- read.xls("cycling_cleaned.xls", as.is=TRUE)
+  cycling.df <- read.xls("./cycling_cleaned.xls", as.is=TRUE)
 
-  
-  heading("basic structure of the cycling.df:\n")
+  heading("Basic structure of the cycling.df:")
   str(cycling.df)
 
-  heading("\n\n*** basic structure of the weather.df:\n")
+  heading("Basic structure of the weather.df:")
   str(weather.df)
 
-  ## convert to timeseries
+  ## convert to timeseries, drop first garbage row of cycling data
   burrard.zoo <- zoo(data.frame(burrard=cycling.df$Burrard.Bridge[-c(1)]),
                      as.Date(cycling.df$Date[-c(1)]))
   weather.zoo <- zoo(data.frame(rain.mm=weather.df$Total.Rain..mm.,
@@ -41,16 +39,16 @@ main <- function () {
                                 max.temp.c=weather.df$Max.Temp..C.), 
                      as.Date(weather.df$Date.Time))
 
-  heading("\n\nZ-ordered timeseries of Burrard Bridge ridership:\n")
+  heading("Z-ordered timeseries of Burrard Bridge ridership:")
   save.plot(xyplot(burrard.zoo), "burrard.png")
 
-  heading("\n\nZ-ordered timeseries of weather data subset:\n")
+  heading("Z-ordered timeseries of weather data subset:")
   str(weather.zoo)
   
-  heading("\n\nStem-and-leaf plot of rain (mm)):\n")
+  heading("Stem-and-leaf plot of rain (mm):")
   stem(weather.zoo$rain.mm)
 
-  heading("\n\nStem-and-leaf plot of snow (cm)):\n")
+  heading("Stem-and-leaf plot of snow (cm):")
   stem(weather.zoo$snow.cm)
 
   ## align and merge the 2 timeseries
@@ -59,9 +57,10 @@ main <- function () {
 
   str(combined.zoo)
   save.plot(xyplot(combined.zoo), "combined.png")
-  heading("\n\nSummary stats on combined ts:\n\n")
+  heading("Summary stats on combined ts:")
   summary(combined.zoo)
 
+  # do a simple lagged correlations on biking stats and the 4 weather factors
   save.plot(ccf(combined.zoo$burrard, combined.zoo$rain.mm), 'ccf_rain.png')
   save.plot(ccf(combined.zoo$burrard, combined.zoo$snow.cm), 'ccf_snow.png')
   save.plot(ccf(combined.zoo$burrard, combined.zoo$min.temp.c), 'ccf_min.png')
