@@ -1,6 +1,7 @@
 #!/usr/bin/Rscript --vanilla --slave
 
 required.packages <- c("gdata", "zoo", "xts", "Cairo", "ggplot2", "lattice"
+                       #, "FastRWeb"
                        #, "timeDate"
                        )
 for (pkg in required.packages) {
@@ -16,21 +17,23 @@ save.plot <- function (p, filename="chart.png", width=8, height=6) {
   dev.off(.dev)
 }
 
-
+heading <- function (s) {
+  cat(s)
+}
 
 main <- function () {
   weather.df <- read.csv('./weather2010n.csv', as.is=TRUE)
   cycling.df <- read.xls("cycling_cleaned.xls", as.is=TRUE)
 
   
-  cat("\n\n*** basic structure of the cycling.df:\n")
+  heading("basic structure of the cycling.df:\n")
   str(cycling.df)
 
-  cat("\n\n*** basic structure of the weather.df:\n")
+  heading("\n\n*** basic structure of the weather.df:\n")
   str(weather.df)
 
   ## convert to timeseries
-  burrard.zoo <- zoo(cycling.df$Burrard.Bridge[-c(1)],
+  burrard.zoo <- zoo(data.frame(burrard=cycling.df$Burrard.Bridge[-c(1)]),
                      as.Date(cycling.df$Date[-c(1)]))
   weather.zoo <- zoo(data.frame(rain.mm=weather.df$Total.Rain..mm.,
                                 snow.cm=weather.df[["Total.Snow..cm."]],
@@ -38,23 +41,31 @@ main <- function () {
                                 max.temp.c=weather.df$Max.Temp..C.), 
                      as.Date(weather.df$Date.Time))
 
-  cat("\n\nZ-ordered timeseries of Burrard Bridge ridership:\n")
+  heading("\n\nZ-ordered timeseries of Burrard Bridge ridership:\n")
   save.plot(xyplot(burrard.zoo), "burrard.png")
 
-  cat("\n\nZ-ordered timeseries of weather data subset:\n")
+  heading("\n\nZ-ordered timeseries of weather data subset:\n")
   str(weather.zoo)
   
-  cat("\n\nStem-and-leaf plot of rain (mm)):\n")
+  heading("\n\nStem-and-leaf plot of rain (mm)):\n")
   stem(weather.zoo$rain.mm)
 
-  cat("\n\nStem-and-leaf plot of snow (cm)):\n")
+  heading("\n\nStem-and-leaf plot of snow (cm)):\n")
   stem(weather.zoo$snow.cm)
 
   ## align and merge the 2 timeseries
   combined.zoo <- merge.zoo(burrard.zoo, weather.zoo)
+  combined.zoo <- combined.zoo[index(combined.zoo) < as.Date('2011-01-01')]
+
   str(combined.zoo)
   save.plot(xyplot(combined.zoo), "combined.png")
-  
+  heading("\n\nSummary stats on combined ts:\n\n")
+  summary(combined.zoo)
+
+  save.plot(ccf(combined.zoo$burrard, combined.zoo$rain.mm), 'ccf_rain.png')
+  save.plot(ccf(combined.zoo$burrard, combined.zoo$snow.cm), 'ccf_snow.png')
+  save.plot(ccf(combined.zoo$burrard, combined.zoo$min.temp.c), 'ccf_min.png')
+  save.plot(ccf(combined.zoo$burrard, combined.zoo$max.temp.c), 'ccf_max.png')
 }
 
 if (!interactive()) main()
